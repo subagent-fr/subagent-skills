@@ -27,7 +27,7 @@ curl -X POST https://api.subagent.fr/v1/inbox_status \
 
 ## Python
 
-`pip install git+https://github.com/subagent-fr/subagent-python`. Aucune dépendance, Python 3.9 ou plus. Une méthode par opération, arguments nommés.
+`pip install subagent-mail`. Aucune dépendance, Python 3.9 ou plus. Une méthode par opération, arguments nommés.
 
 ```python
 from subagent_mail import Subagent, SubagentError
