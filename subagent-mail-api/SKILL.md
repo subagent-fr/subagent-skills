@@ -55,7 +55,7 @@ except SubagentError as refus:
 
 ## TypeScript
 
-`npm install github:subagent-fr/subagent-node`. Aucune dépendance, Node 20 ou plus, module ES. Les méthodes sont en camelCase, les arguments gardent les noms du serveur.
+`npm install subagent-mail`. Aucune dépendance, Node 20 ou plus, module ES. Les méthodes sont en camelCase, les arguments gardent les noms du serveur.
 
 ```ts
 import { Subagent, SubagentError } from "subagent-mail";
@@ -84,7 +84,7 @@ try {
 
 ## Ligne de commande
 
-`npx github:subagent-fr/subagent-cli <opération> [--paramètre valeur …]`, ou `npm install -g github:subagent-fr/subagent-cli` puis `subagent …`. Résultat en JSON sur la sortie standard ; refus en JSON sur la sortie d'erreur, code de sortie 1.
+`npx subagent-mail-cli <opération> [--paramètre valeur …]`, ou `npm install -g subagent-mail-cli` puis `subagent …`. Résultat en JSON sur la sortie standard ; refus en JSON sur la sortie d'erreur, code de sortie 1.
 
 ```sh
 subagent inbox_status
@@ -119,6 +119,9 @@ export SUBAGENT_KEY=sak_exemple_agent
 | `sign_up` | sans clé | Ouvre un espace Subagent pour un agent, sans clé ni console : rend une clé d’API (affichée une seule fois : gardez-la) et une boîte <username>@<domaine commun>, qui reçoit tout de suite. |
 | `verify` | read ou send ou approve ou manage_inboxes | Vérifie votre espace avec le code à 6 chiffres que votre humain a reçu par e-mail, et ouvre l’envoi. |
 | `attach_human` | read ou send ou approve ou manage_inboxes | Rattache l’e-mail de votre humain à un espace pas encore vérifié, et lui envoie un code à 6 chiffres (valable 24 heures) à donner à verify. |
+| `open_workspace` | send ou read ou approve ou manage_inboxes | Ouvre un établi Subagent dans cette conversation. |
+| `navigate_workspace` | send ou read ou approve ou manage_inboxes | Pilote l’établi déjà ouvert, sans créer de carte. |
+| `workspace_events` | send ou read ou approve ou manage_inboxes | Réservé à la vue : attend jusqu’à 18 secondes une navigation de cette instance. |
 | `inbox_status` | read ou send ou approve ou manage_inboxes | Point de départ : dit sur quel espace travaille cette clé, s’il est vérifié, ses limites sur le domaine commun, ses permissions, le créneau d’envoi, et pour chaque boîte (ou celle demandée) son état, son réchauffage, le quota du jour (envoyés / restants), les messages en file, les brouillons à valider et le prochain départ possible. |
 | `workspace_snapshot` | send ou read ou approve ou manage_inboxes | Précharge les premières pages des rubriques autorisées pour cette connexion. |
 | `activity_report` | read ou approve | Dit en un appel ce qui attend une décision humaine (brouillons à valider, messages reçus sans réponse, domaines à vérifier, boîtes suspendues) et ce que les boîtes ont envoyé et reçu : aujourd’hui, ou sur les sept derniers jours avec le détail par jour. |
@@ -266,7 +269,7 @@ export SUBAGENT_KEY=sak_exemple_agent
 | --- | --- | --- | --- |
 | `attachments_not_allowed` | 409 | Le message n'est pas une réponse dans une conversation, ni un message vers une adresse de l'espace. | Envoyer le premier message sans pièce. Quand le correspondant a répondu, joindre la pièce à la réponse. |
 | `attachment_refused` | 422 | Le fichier s'exécute d'un double clic, ou il est vide. | Joindre un document (PDF, image, tableur, texte) ou une archive de documents. |
-| `attachment_limit` | 409 | Le message porte déjà 10 pièces, ses pièces dépasseraient 10 Mo, l'espace garde déjà 500 Mo de pièces envoyées, le service a atteint son plafond, ou le lien de dépôt a déjà reçu 30 Mo. Sur le lien de dépôt, un envoi de plus de 10 Mo répond 413. | Retirer une pièce avec `remove_attachment`, demander un nouveau lien avec `attach_files`, ou donner un lien vers le document dans le texte. |
+| `attachment_limit` | 409 ou 413 | Le message porte déjà 10 pièces, ses pièces dépasseraient 10 Mo, l'espace garde déjà 500 Mo de pièces envoyées, le service a atteint son plafond, ou le lien de dépôt a déjà reçu 30 Mo. Sur le lien de dépôt, un envoi de plus de 10 Mo répond 413. | Retirer une pièce avec `remove_attachment`, demander un nouveau lien avec `attach_files`, ou donner un lien vers le document dans le texte. |
 | `cc_not_allowed` | 409 | Le correspondant n'a pas encore écrit dans le fil, ou l'adresse n'y a pas écrit elle-même et n'est pas une adresse de l'espace. | Répondre sans copie, ou mettre en copie une adresse qui a écrit dans le fil. |
 | `upload_busy` | 503 | Sur le lien de dépôt : un autre dépôt est en cours pour ce brouillon ou depuis cette adresse, ou le service en lit déjà seize. | Réessayer dans un instant. |
 | `upload_timeout` | 408 | Sur le lien de dépôt : l'envoi a mis plus de 120 secondes à arriver. | Réessayer, avec des fichiers plus légers si la connexion est lente. |
@@ -301,13 +304,24 @@ export SUBAGENT_KEY=sak_exemple_agent
 | `campaign_not_ready` | 422 | L'aperçu signale des destinataires ou des champs bloquants : la campagne ne peut pas partir. | Relire `preview_campaign`, corriger l'audience ou les messages, puis relancer. |
 | `campaign_changed` | 409 | La campagne ou son audience a changé depuis l'aperçu dont la `revision` est donnée. | Relire `preview_campaign` et lancer avec sa nouvelle `revision`. |
 | `campaign_transition` | 409 | L'action demandée ne s'applique pas à une campagne dans cet état (par exemple reprendre une campagne qui n'est pas en pause). | Lire son état avec `get_campaign`, puis choisir l'action qui convient. |
+| `campaign_not_due` | 409 | Une préparation d'envoi ne correspond plus à l'étape attendue, à une campagne active ou à son accès d'envoi. | Relire la campagne avec `get_campaign` et laisser son ordonnanceur reprendre ; ne pas recréer un envoi individuel. |
+
+### Reprise d'historique
+
+| `code` | HTTP | Ce qui s'est passé | Que faire |
+| --- | --- | --- | --- |
+| `history_owner` | 403 | Le propriétaire de l'export ne correspond pas à l'humain vérifié de l'espace destinataire. | Vérifier l'espace choisi et le propriétaire de l'export avec l'administrateur, puis reprendre avec les bons éléments. |
+| `history_token_conflict` | 409 | Un jeton de désinscription historique est déjà associé à un autre destinataire ou espace. | Faire contrôler le conflit par l'administrateur avant de reprendre l'import ; conserver l'association existante. |
 
 ### L'application dans l'assistant
 
 | `code` | HTTP | Ce qui s'est passé | Que faire |
 | --- | --- | --- | --- |
-| `access_changed` | 409 | Les droits de la connexion ont changé pendant que l'application préparait ses pages. | Relire l'espace : l'application le fait d'elle-même. |
+| `access_changed` | 409 | Les droits de la connexion ont changé pendant une lecture ou la synchronisation de l'établi. | Rouvrir l'établi avec l'accès actuel ; le contexte de l'ancien accès ne vaut plus. |
 | `workspace_changing` | 409 | L'espace est en cours d'actualisation. | Réessayer dans un instant. |
+| `workspace_expired` | 404 | L'instance de l'établi a expiré, a été fermée, ou n'est pas accessible avec cette connexion. | Rouvrir avec `open_workspace`, puis reprendre le nouvel `instance_id` fourni par cette conversation. |
+| `workspace_busy` | 429 | Deux synchronisations attendent déjà pour cette instance, ou le service a atteint sa limite de 64 attentes simultanées. | Garder une seule attente à la fois dans la vue, puis réessayer avec un délai. |
+| `workspace_capacity` | 429 ou 503 | Le nombre d'établis ouverts atteint sa limite (429), ou la mémoire réservée à leurs pages est pleine (503). | Réutiliser l'instance de cette conversation, fermer les vues inutilisées et réessayer dans un instant. |
 
 ### Accès et requêtes
 

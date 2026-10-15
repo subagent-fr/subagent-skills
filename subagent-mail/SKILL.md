@@ -94,6 +94,9 @@ Pas de pièce jointe, pas de plusieurs destinataires par message, pas d'accès I
 | `sign_up` | sans clé | Ouvre un espace Subagent pour un agent, sans clé ni console : rend une clé d’API (affichée une seule fois : gardez-la) et une boîte <username>@<domaine commun>, qui reçoit tout de suite. |
 | `verify` | read ou send ou approve ou manage_inboxes | Vérifie votre espace avec le code à 6 chiffres que votre humain a reçu par e-mail, et ouvre l’envoi. |
 | `attach_human` | read ou send ou approve ou manage_inboxes | Rattache l’e-mail de votre humain à un espace pas encore vérifié, et lui envoie un code à 6 chiffres (valable 24 heures) à donner à verify. |
+| `open_workspace` | send ou read ou approve ou manage_inboxes | Ouvre un établi Subagent dans cette conversation. |
+| `navigate_workspace` | send ou read ou approve ou manage_inboxes | Pilote l’établi déjà ouvert, sans créer de carte. |
+| `workspace_events` | send ou read ou approve ou manage_inboxes | Réservé à la vue : attend jusqu’à 18 secondes une navigation de cette instance. |
 | `inbox_status` | read ou send ou approve ou manage_inboxes | Point de départ : dit sur quel espace travaille cette clé, s’il est vérifié, ses limites sur le domaine commun, ses permissions, le créneau d’envoi, et pour chaque boîte (ou celle demandée) son état, son réchauffage, le quota du jour (envoyés / restants), les messages en file, les brouillons à valider et le prochain départ possible. |
 | `workspace_snapshot` | send ou read ou approve ou manage_inboxes | Précharge les premières pages des rubriques autorisées pour cette connexion. |
 | `activity_report` | read ou approve | Dit en un appel ce qui attend une décision humaine (brouillons à valider, messages reçus sans réponse, domaines à vérifier, boîtes suspendues) et ce que les boîtes ont envoyé et reçu : aujourd’hui, ou sur les sept derniers jours avec le détail par jour. |
